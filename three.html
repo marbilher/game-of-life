@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>My first three.js app</title>
+		<style>
+			body { margin: 0; }
+			canvas { display: block; }
+		</style>
+	</head>
+	<body>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r99/three.min.js"></script>
+		<script>
+			var scene = new THREE.Scene();
+            var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+
+            var renderer = new THREE.WebGLRenderer();
+            renderer.setSize( window.innerWidth, window.innerHeight );
+            document.body.appendChild( renderer.domElement );
+
+
+            camera.position.z = 20;
+
+            function GoLCube (xCoord, yCoord) {
+                    THREE.Geometry.call(this);
+
+                    this.geometry = new THREE.BoxGeometry(1, 1, 1);
+                    this.materialWireframe = new THREE.MeshPhongMaterial({color:"red",wireframe:true});
+                    var materialSolid = new THREE.MeshPhongMaterial({color:"green",wireframe:false});
+                    this.material = new THREE.MeshPhongMaterial( {
+                        color: 00000000,
+                        opacity: 0.3,
+                        transparent: true
+                    } );
+                    this.mesh = new THREE.Mesh( this.geometry, this.material );
+
+
+                    // GoLCube.prototype = Object.create(THREE.Geometry.prototype)
+                    // GoLCube.prototype.constructor = GoLCube;
+
+                    // GoLCube.prototype.setNewColor = function() {
+                    //     var random = Math.random() >= 0.5;
+                    //     if(random) {
+                    //         this.material.opacity = 0;
+                    //     } else {
+                    //         this.material.opacity = 0.3;
+                    //     }
+                    // }
+
+
+                    // wireframe
+                    this.geo = new THREE.EdgesGeometry( this.mesh.geometry ); // or WireframeGeometry
+                    this.mat = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 2 } );
+                    this.wireframe = new THREE.LineSegments( this.geo, this.mat );
+                    this.mesh.add( this.wireframe );
+                    this.mesh.position.set(xCoord, yCoord, 0)
+                    return this.mesh;
+            }
+
+            //Instantiated objects from class GoLCube have constructor name of "pa"
+            // // They do not have a prototype key
+            GoLCube.prototype = Object.create(THREE.Geometry.prototype)
+            GoLCube.prototype.constructor = GoLCube;
+            
+            GoLCube.prototype.setNewColor = function() {
+                var random = Math.random() >= 0.5;
+                if(random) {
+                    this.material.opacity = 0;
+                } else {
+                    this.material.opacity = 0.3;
+                }
+            }
+
+
+            function addLight(...pos) {
+                const color = 0xFFFFFF;
+                const intensity = 10;
+                const light = new THREE.DirectionalLight(color, intensity);
+                light.position.set(...pos);
+                scene.add(light);
+            }
+            addLight(-1, 2, 4);
+            addLight( 1, -1, -2);   
+
+            let cubeArray = [] 
+            
+            for(let x = 0; x < 10; x++) {
+                let inner = []
+                cubeArray.push(inner)
+                for(let y = 0; y < 10; y++) {
+                    let newCube = new GoLCube(x, y)
+                    cubeArray[x].push(newCube)
+                    console.log(newCube.setNewColor)
+                    scene.add(newCube)
+                }
+            }
+            console.log(cubeArray[2][3].constructor.name)
+            console.log(cubeArray[2][3])
+            console.log(GoLCube.prototype)
+
+            function animate() {
+                requestAnimationFrame( animate );
+                renderer.render( scene, camera );
+                for(let x = 0; x < 10; x++) {
+                    for(let y = 0; y < 10; y++) {
+                        // console.log(cubeArray[x][y])
+                        // cubeArray[x][y].setColor()
+                    }
+                }
+                
+            }
+            animate();
+
+
+		</script>
+	</body>
+</html>
