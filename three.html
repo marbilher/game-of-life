@@ -2,15 +2,62 @@
 <html>
 	<head>
 		<meta charset="utf-8">
-		<title>My first three.js app</title>
+        <title>Game of Life 3D</title>
 		<style>
-			body { margin: 0; }
 			canvas { display: block; }
+            body {
+            overflow: hidden;
+            margin: 0;
+            }
+
+            .ui {
+            position: absolute;
+            }
+
+            button{
+            margin: 20px;
+            }
+
+            #restart {
+                margin-top: 20px
+            }
+
+            #glider {
+                margin-top: 40px
+            }
+
+            #clock {
+                margin-top: 60px
+            }
+
+            #collision {
+                margin-top: 80px
+            }
+
+            #beacons {
+                margin-top: 100px
+            }
+            
 		</style>
 	</head>
 	<body>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r99/three.min.js"></script>
+        <button onClick="restart()" class="ui" id="restart">Reset</button>
+        <button onClick="addGlider()" class="ui" id="glider">Add Glider</button>
+        <button onClick="addClock()" class="ui" id="clock">Add Clock</button>
+        <button onClick="addCollision()" class="ui" id="collision">Add Collision</button>
+        <button onClick="addBeacons()" class="ui" id="beacons">Add Beacons</button>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r99/three.min.js"></script>
+        <script type="text/javascript"  src="./GoLCube.js"></script>
+        <script type="text/javascript"  src="./Glider.js"></script>
+        <script type="text/javascript"  src="./Clock.js"></script>
+        <script type="text/javascript"  src="./Collision.js"></script>
+        <script type="text/javascript"  src="./Beacons.js"></script>
+
+
+
 		<script>
+
 			let scene = new THREE.Scene();
             scene.background = new THREE.Color( 0xf0f0f0 );
             let camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
@@ -22,65 +69,27 @@
             camera.position.z = 30;
             camera.position.x = 10;
 
-            let cubeSize = .8;
+            let cubeSize = 1;
 
-            function GoLCube(xCoord, yCoord, zCoord) {
-                    THREE.Object3D.call(this);
-
-                    this.active = false
-                    this.geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
-                    this.materialWireframe = new THREE.MeshPhongMaterial({color:"red",wireframe:true});
-                    this.materialSolid = new THREE.MeshPhongMaterial({color:"green",wireframe:false});
-                    this.material = new THREE.MeshPhongMaterial( {
-                        color: 00000000,
-                        opacity: 0.3,
-                        transparent: true
-                    } );
-                    this.mesh = new THREE.Mesh( this.geometry, this.material );
-
-                    this.geo = new THREE.EdgesGeometry( this.mesh.geometry ); // or WireframeGeometry
-                    this.mat = new THREE.LineBasicMaterial( { color: black, linewidth: 5, opacity: 0.5 } );
-                    this.wireframe = new THREE.LineSegments( this.geo, this.mat );
-                    this.mesh.add(this.wireframe );
-                    this.mesh.position.set(xCoord, yCoord, zCoord)
+            let rules = {
+                liveMin: 4,
+                liveMax: 5,
+                deadMin: 5,
+                deadMax: 5
             }
 
             let black = new THREE.Color("rgb(255, 255, 255)");
             let white = new THREE.Color("rgb(0, 0, 0)");
 
-
-            GoLCube.prototype = Object.create(THREE.Object3D.prototype)
-            GoLCube.prototype.constructor = GoLCube;
-            GoLCube.prototype.toggleCubeState = function() {
-                        if(this.state) {
-                            this.state = false
-
-                        } else {
-                            this.state = true
-                        }
-                    }
-
-            GoLCube.prototype.assignRandomState = function() {
-                let random = Math.random() >= 0.5;
+            const assignRandomState = function() {
+                let random = Math.random() >= 0.8   ;
                 if(random) {
-                    this.state = true
+                    return true
 
                 } else {
-                    this.state = false
+                    return false
                 }
             }
-
-            GoLCube.prototype.setColorByState = function() {
-                if(!this.state) {
-                    this.mesh.material.opacity = .0;
-                    this.mesh.material.color = black
-
-                } else {
-                    this.mesh.material.opacity = .7;
-                    this.mesh.material.color = white
-                }
-            }
-
                 
 
             function addLight(...pos) {
@@ -95,22 +104,34 @@
             addLight( 30, 50, -40);   
 
             let arraySize = 15
-            let cubeArray = []
+            let cubeStore = []
+            let primaryStateStore = []
+            let secondaryStateStore = []
             //pivot to hold cubes
             let pivot = new THREE.Group();
             scene.add( pivot );
 
 
-            //Create 3D matrix with cube objects
+            //Create matrices with cube objects / false initial states
             for(let x = 0; x < arraySize; x++) {
-                let cubeArrayY = new Array(arraySize)
-                cubeArray.push(cubeArrayY)
+                let cubeStoreY = new Array(arraySize)
+                let primaryY = new Array(arraySize)
+                let secondaryY = new Array(arraySize)
+                cubeStore.push(cubeStoreY)
+                primaryStateStore.push(primaryY)
+                secondaryStateStore.push(secondaryY)
                 for(let y = 0; y < arraySize; y++) {
-                    let cubeArrayZ = []
-                    cubeArray[x][y] = cubeArrayZ
+                    let cubeStoreZ = []
+                    let primaryZ = []
+                    let secondaryZ = []
+                    cubeStore[x][y] = cubeStoreZ
+                    primaryStateStore[x][y] = primaryZ
+                    secondaryStateStore[x][y] = secondaryZ
                         for(let z = 0; z < arraySize; z++) {
                             let newCube = new GoLCube(x, y, z)
-                            cubeArray[x][y][z] = newCube
+                            cubeStore[x][y][z] = newCube
+                            primaryStateStore[x][y][z] = false
+                            secondaryStateStore[x][y][z] = false
                     }
                 }
             }
@@ -118,40 +139,221 @@
             for(let x = 0; x < arraySize; x++) {
                 for(let y = 0; y < arraySize; y++) {
                     for(let z = 0; z < arraySize; z++) {
-                        scene.add(cubeArray[x][y][z].mesh)
-                        cubeArray[x][y][z].assignRandomState()
+                        primaryStateStore[x][y][z] = assignRandomState()
+                        scene.add(cubeStore[x][y][z].mesh)
+                    }
+                }
+            }
+        
+        function randomizeCells() {
+            for(let x = 0; x < arraySize; x++) {
+                for(let y = 0; y < arraySize; y++) {
+                    for(let z = 0; z < arraySize; z++) {
+                        primaryStateStore[x][y][z] = assignRandomState()
+                    }
+                }
+            }
+        }
+
+
+        function addGlider() {
+            let glider = new Glider()
+
+            rules.liveMin = 4
+            rules.liveMax = 5
+            rules.deadMin = 5
+            rules.deadMax = 5
+
+            programRunning = false
+            for(let x = 0; x < arraySize; x++) {
+                for(let y = 0; y < arraySize; y++) {
+                    for(let z = 0; z < arraySize; z++) {
+                        primaryStateStore[x][y][z] = false
+                        secondaryStateStore[x][y][z] = false
                     }
                 }
             }
 
-            pivot.parent.rotation.x += .8;
-            pivot.parent.rotation.y += .8;
-            console.log(cubeArray[1][2][3])
-            function animate() {
+            for(let i = 0; i < glider.shape.length; i++) {
+                primaryStateStore[glider.shape[i][0]][glider.shape[i][1]][glider.shape[i][2]] = true
+            }
+            programRunning = true
+        }
 
+        function addCollision() {
+            let collision = new Collision()
 
-                setTimeout( function() {
-                requestAnimationFrame( animate );
-                renderer.render( scene, camera );
-                for(let x = 0; x < arraySize; x++) {
+            rules.liveMin = 5
+            rules.liveMax = 7
+            rules.deadMin = 6
+            rules.deadMax = 6
+
+            programRunning = false
+            for(let x = 0; x < arraySize; x++) {
+                for(let y = 0; y < arraySize; y++) {
+                    for(let z = 0; z < arraySize; z++) {
+                        primaryStateStore[x][y][z] = false
+                        secondaryStateStore[x][y][z] = false
+                    }
+                }
+            }
+
+            for(let i = 0; i < collision.shape.length; i++) {
+                primaryStateStore[collision.shape[i][0]][collision.shape[i][1]][collision.shape[i][2]] = true
+            }
+            programRunning = true
+        }
+
+        function addClock() {
+            let clock = new Clock()
+
+            rules.liveMin = 5
+            rules.liveMax = 7
+            rules.deadMin = 6
+            rules.deadMax = 6
+
+            programRunning = false
+            for(let x = 0; x < arraySize; x++) {
+                for(let y = 0; y < arraySize; y++) {
+                    for(let z = 0; z < arraySize; z++) {
+                        primaryStateStore[x][y][z] = false
+                        secondaryStateStore[x][y][z] = false
+                    }
+                }
+            }
+
+            for(let i = 0; i < clock.shape.length; i++) {
+                primaryStateStore[clock.shape[i][0]][clock.shape[i][1]][clock.shape[i][2]] = true
+            }
+            programRunning = true
+        }
+
+        function addBeacons() {
+            let beacons = new Beacons()
+
+            rules.liveMin = 6
+            rules.liveMax = 7
+            rules.deadMin = 7
+            rules.deadMax = 7
+
+            programRunning = false
+            for(let x = 0; x < arraySize; x++) {
+                for(let y = 0; y < arraySize; y++) {
+                    for(let z = 0; z < arraySize; z++) {
+                        primaryStateStore[x][y][z] = false
+                        secondaryStateStore[x][y][z] = false
+                    }
+                }
+            }
+
+            for(let i = 0; i < beacons.shape.length; i++) {
+                primaryStateStore[beacons.shape[i][0]][beacons.shape[i][1]][beacons.shape[i][2]] = true
+            }
+            programRunning = true
+        }
+
+        function restart() {
+            programRunning = false
+            for(let x = 0; x < arraySize; x++) {
+                for(let y = 0; y < arraySize; y++) {
+                    for(let z = 0; z < arraySize; z++) {
+                        primaryStateStore[x][y][z] = false
+                        secondaryStateStore[x][y][z] = false
+                    }
+                }
+            }
+            for(let x = Math.floor(arraySize * .10); x < Math.floor(arraySize * .9); x++) {
+                for(let y = Math.floor(arraySize * .10); y < Math.floor(arraySize * .9); y++) {
+                    for(let z = Math.floor(arraySize * .10); z < Math.floor(arraySize * .9); z++) {
+                        primaryStateStore[x][y][z] = assignRandomState()
+                    }
+                }
+            }
+            programRunning = true
+        }
+
+        function updateNext(x, y, z, stateStore, updateStore) {
+            let numNeighbors = 0
+
+            let translatedX = x
+            let translatedY = y
+            let translatedZ = z
+
+            for(let xCoord = -1; xCoord < 2; xCoord++) {
+                for(let yCoord = -1; yCoord < 2; yCoord++) {
+                    for(let zCoord = -1; zCoord < 2; zCoord++) {
+                        //Allows for wrap around, can refactor /w else if
+                        if(x + xCoord === -1) translatedX = arraySize - 1
+                        if(y + yCoord === -1) translatedY = arraySize - 1
+                        if(z + zCoord === -1) translatedZ = arraySize - 1
+                        if(x + xCoord === arraySize) translatedX = 0
+                        if(y + yCoord === arraySize) translatedY = 0
+                        if(z + zCoord === arraySize) translatedZ = 0
+                        if(x + xCoord != arraySize && x + xCoord != -1) translatedX = x + xCoord
+                        if(y + yCoord != arraySize && y + yCoord != -1) translatedY = y + yCoord
+                        if(z + zCoord != arraySize && z + zCoord != -1) translatedZ = z + zCoord
+                        //If value in store is true we can increase the neighbor count
+                        if(stateStore[translatedX][translatedY][translatedZ]) numNeighbors++
+                    }
+                }
+            }
+            //remove 1 for counting self in above loops
+            if(stateStore[x][y][z]) numNeighbors--
+            // //rules
+            if (stateStore[x][y][z] && (numNeighbors >= rules.liveMin && numNeighbors <= rules.liveMax)) { 
+                    updateStore[x][y][z] = true
+                } else if (!stateStore[x][y][z] && (numNeighbors >= rules.deadMin && numNeighbors <= rules.deadMax)) {
+                    updateStore[x][y][z] = true
+                } else {
+                    updateStore[x][y][z] = false
+                }
+
+                //these rules produced an oscillator
+                // if (stateStore[x][y][z] && (numNeighbors >= 7 && numNeighbors <= 14)) { 
+                //     updateStore[x][y][z] = true
+                // } else if (!stateStore[x][y][z] && (numNeighbors >= 8 && numNeighbors <= 8)) {
+                //     updateStore[x][y][z] = true
+                // } else {
+                //     updateStore[x][y][z] = false
+                    // cubeStore[x][y][z].setRed() //need a third state to manage color
+                                                //or 10 for alive and, when dead, decrement by 1 each cycle
+                // }
+
+        }
+
+        function stepForward() {
+            
+            for(let x = 0; x < arraySize; x++) {
                     for(let y = 0; y < arraySize; y++) {
-                        for(let z = 0; z < arraySize; z++) {
-
-                            cubeArray[x][y][z].setColorByState()
+                            for(let z = 0; z < arraySize; z++) {
+                                if(swapped) {
+                                    updateNext(x, y, z, primaryStateStore, secondaryStateStore)
+                                    cubeStore[x][y][z].setColorByState(secondaryStateStore[x][y][z], 'secondary')
+                                } else {
+                                    updateNext(x, y, z, secondaryStateStore, primaryStateStore)
+                                    cubeStore[x][y][z].setColorByState(primaryStateStore[x][y][z], 'primary')
+                                }
+                            }
                         }
                     }
-                }
-                
-                // pivot.parent.rotation.z += .005;
-                
+                    swapped = !swapped
+        }
 
-            }, 75);
+            let programRunning = true
+            pivot.parent.rotation.x += .8;
+            pivot.parent.rotation.y += .8;
+            let swapped = true
+
+            function animate() {
+                    setTimeout( function() {
+                        if(!programRunning) return
+                    requestAnimationFrame( animate );
+                    renderer.render( scene, camera );
+                    stepForward();
+                }, 50);
             }
 
-
                 animate();
-                
-
 
 		</script>
 	</body>
